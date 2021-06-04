@@ -17,9 +17,6 @@ from spacy.tokens import Doc
 
 import en_core_web_sm
 
-from google.cloud import language
-
-service_path = './HT Big Query.json'
 
 # Define cvlass
 class MCW():
@@ -211,69 +208,3 @@ class MCW():
         writer.save()
 
 
-# Functions to get word combinations
-def most_common_words(df, text_column, word_range, additional_stop_words = []):
-
-    # Dan has changed
-
-    # stop words
-    add_stop_words = ENGLISH_STOP_WORDS.union(additional_stop_words)
-
-    # Fill with balnk spaces
-    df[text_column] = df[text_column].fillna('')
-
-    X = df[text_column].values.astype(str)
-
-    vect = CountVectorizer(stop_words=add_stop_words, ngram_range= (word_range,word_range))
-    X = vect.fit_transform(X)
-
-    word_counts = list(zip(vect.get_feature_names(),np.asarray(X.sum(axis=0)).ravel()))
-
-    columns = ['word', 'count']
-    word_counts = pd.DataFrame(word_counts, columns=columns)
-
-    word_counts = word_counts.sort_values(by='count', ascending=False)
-
-    return word_counts
-
-def coefficient_modeling(dataframe_name, text_column_name, predictor_column_name, additional_stopwords,X,vect):
-
-
-    #X = X.toarray()
-
-    # Now make the prediction and target variables
-    # If we make X an array then we don't have to make it "dense" later
-    #X = X.toarray()
-    y = dataframe_name[predictor_column_name]
-
-    # Check to be sure they are right shape - should have same number of rows
-    print (X.shape, y.shape)
-    print('Izzy is a legend')
-
-    #initiate
-    cos = SVC(kernel='linear')
-
-    # Fitting the Data
-    cos.fit(X, y)
-
-    # Getting predictions
-    pred = cos.predict(X)
-
-    # Getting Score
-    score = cos.score(X, y)
-    print('score ' + str(score))
-
-    # Precision score - Real values in first, then prediction values
-    print('precision ' + str(precision_score(y, pred)))
-
-    print('coef ' + str(cos.coef_.todense()))
-
-    vect.get_feature_names()
-
-    cos_df = pd.DataFrame(cos.coef_.todense(), columns=vect.get_feature_names(), index = ['coeffs']).T
-
-    # Sort so word to predict couples are at top
-    cos_df = cos_df.sort_values('coeffs', ascending=False)
-    cos_df.head(10)
-
-    return cos_df
